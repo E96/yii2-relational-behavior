@@ -40,7 +40,7 @@ class User extends ActiveRecord
 
 In view:
 ```php
-$form->field($model, 'permissions')->dropDownList($permissions, ['multiple' => true]) ?>
+$form->field($model, 'permissions')->dropDownList($permissions, ['multiple' => true])
 ```
 
 ## Usage
