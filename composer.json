@@ -2,7 +2,7 @@
   "name": "e96/yii2-relational-behavior",
   "description": "Easy saving relational models in yii2",
   "type": "yii2-extension",
-  "keywords": ["yii2", "relational", "related", "pk", "primary"],
+  "keywords": ["yii2", "behavior", "relational", "related", "pk", "primary"],
   "minimum-stability": "dev",
   "license": "MIT",
   "authors": [
