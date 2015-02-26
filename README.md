@@ -32,7 +32,8 @@ class User extends ActiveRecord
     // define many-to-many relation
     public function getPermissions()
     {
-        return $this->hasMany(Permission::className(), ['id' => 'permissionId'])->viaTable('user-map-permission', ['userId' => 'id']);
+        return $this->hasMany(Permission::className(), ['id' => 'permissionId'])
+            ->viaTable('user-map-permission', ['userId' => 'id']);
     }
 }
 ```
