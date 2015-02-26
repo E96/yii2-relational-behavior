@@ -1,0 +1,24 @@
+{
+  "name": "e96/yii2-relational-behavior",
+  "description": "Easy saving relational models in yii2",
+  "type": "yii2-extension",
+  "keywords": ["yii2", "relational", "related", "pk", "primary"],
+  "minimum-stability": "dev",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "m8rge",
+      "email": "to.merge@gmail.com",
+      "homepage": "http://aputilov.ru"
+    }
+  ],
+  "require": {
+    "php": ">=5.4.0",
+    "yiisoft/yii2": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "e96\\behavior\\": "src/"
+    }
+  }
+}
