@@ -75,7 +75,7 @@ class RelationalBehavior extends Behavior
         $relatedRecords = $model->getRelatedRecords();
         foreach ($relatedRecords as $relationName => $relationRecords) {
             $activeQuery = $model->getRelation($relationName);
-            if (!empty($activeQuery->via)) { // work only for many-to-many relation
+            if (!empty($activeQuery->via)) { // works only for many-to-many relation
                 /* @var $viaQuery ActiveQuery */
                 if ($activeQuery->via instanceof ActiveQuery) {
                     $viaQuery = $activeQuery->via;
