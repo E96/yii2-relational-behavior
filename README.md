@@ -11,6 +11,7 @@ php composer.phar require e96/yii2-relational-behavior:dev-master
 ```
 
 ## Setup
+In model:
 ```php
 class User extends ActiveRecord
 {
