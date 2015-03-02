@@ -106,8 +106,10 @@ class RelationalBehavior extends Behavior
                 ) {
                     $db = $model->getDb();
                     $db->createCommand()->delete($junctionTable, [$primaryModelColumn => $model->primaryKey])->execute();
-                    $db->createCommand()->batchInsert($junctionTable, [$primaryModelColumn, $relatedModelColumn],
-                        $junctionRows)->execute();
+                    if (!empty($junctionRows)) {
+                        $db->createCommand()->batchInsert($junctionTable, [$primaryModelColumn, $relatedModelColumn],
+                            $junctionRows)->execute();
+                    }
                 });
             }
         }
