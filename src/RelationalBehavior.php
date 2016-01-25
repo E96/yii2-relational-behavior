@@ -8,6 +8,7 @@ use yii\base\ErrorException;
 use yii\base\Object;
 use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
+use yii\db\Query;
 use yii\helpers\ArrayHelper;
 
 /**
@@ -15,10 +16,17 @@ use yii\helpers\ArrayHelper;
  */
 class RelationalBehavior extends Behavior
 {
+    const EVENT_AFTER_RELATION_UPDATE = 'manyToManyRelationUpdate';
+    
     /**
      * @var ActiveRecord
      */
     public $owner;
+
+    /**
+     * @var array
+     */
+    protected $oldRelations = [];
 
     public function attach($owner)
     {
@@ -50,18 +58,51 @@ class RelationalBehavior extends Behavior
         return parent::canSetProperty($name, $checkVars);
     }
 
+    /**
+     * @param ActiveQuery $activeQuery
+     * @return array
+     * @throws ErrorException
+     */
+    protected function parseQuery($activeQuery)
+    {
+        /* @var $viaQuery ActiveQuery */
+        if ($activeQuery->via instanceof ActiveQuery) {
+            $viaQuery = $activeQuery->via;
+        } elseif (is_array($activeQuery->via)) {
+            $viaQuery = $activeQuery->via[1];
+        } else {
+            throw new ErrorException('Unknown via type');
+        }
+
+        $junctionTable = reset($viaQuery->from);
+        $primaryModelColumn = array_keys($viaQuery->link)[0];
+        $relatedModelColumn = reset($activeQuery->link);
+        
+        return [$junctionTable, $primaryModelColumn, $relatedModelColumn];
+    }
+
     public function __set($name, $value)
     {
         if (is_array($value) && count($value) > 0 && !($value[0] instanceof Object) ||
             !is_array($value) && !($value instanceof Object)
         ) {
             $getter = 'get' . $name;
-            /** @var ActiveQuery $query */
-            $query = $this->owner->$getter();
+            /** @var ActiveQuery $activeQuery */
+            $activeQuery = $this->owner->$getter();
 
             /* @var $modelClass ActiveRecord */
-            $modelClass = $query->modelClass;
+            $modelClass = $activeQuery->modelClass;
             $value = $modelClass::findAll($value);
+
+            if (!empty($activeQuery->via)) {
+                list($junctionTable, $primaryModelColumn, $relatedModelColumn) = $this->parseQuery($activeQuery); 
+                $query = new Query([
+                    'select' => [$relatedModelColumn],
+                    'from' => [$junctionTable],
+                    'where' => [$primaryModelColumn => $this->owner->primaryKey]
+                ]);
+                $this->oldRelations[$name] = $query->createCommand()->queryColumn();
+            }
         }
 
         $this->owner->populateRelation($name, $value);
@@ -76,18 +117,7 @@ class RelationalBehavior extends Behavior
         foreach ($relatedRecords as $relationName => $relationRecords) {
             $activeQuery = $model->getRelation($relationName);
             if (!empty($activeQuery->via)) { // works only for many-to-many relation
-                /* @var $viaQuery ActiveQuery */
-                if ($activeQuery->via instanceof ActiveQuery) {
-                    $viaQuery = $activeQuery->via;
-                } elseif (is_array($activeQuery->via)) {
-                    $viaQuery = $activeQuery->via[1];
-                } else {
-                    throw new ErrorException('Unknown via type');
-                }
-
-                $junctionTable = reset($viaQuery->from);
-                $primaryModelColumn = array_keys($viaQuery->link)[0];
-                $relatedModelColumn = reset($activeQuery->link);
+                list($junctionTable, $primaryModelColumn, $relatedModelColumn) = $this->parseQuery($activeQuery);
 
                 $junctionRows = [];
                 $relationPks = ArrayHelper::getColumn($relationRecords, array_keys($activeQuery->link)[0], false);
@@ -113,5 +143,9 @@ class RelationalBehavior extends Behavior
                 });
             }
         }
+        
+        $model->trigger(self::EVENT_AFTER_RELATION_UPDATE, new AfterRelationUpdateEvent([
+            'oldRelations' => $this->oldRelations 
+        ]));
     }
 }
