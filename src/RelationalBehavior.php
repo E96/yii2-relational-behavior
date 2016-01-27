@@ -3,6 +3,7 @@
 namespace e96\behavior;
 
 
+use RuntimeException;
 use yii\base\Behavior;
 use yii\base\ErrorException;
 use yii\base\Object;
@@ -31,10 +32,10 @@ class RelationalBehavior extends Behavior
     public function attach($owner)
     {
         if (!($owner instanceof ActiveRecord)) {
-            throw new ErrorException('Owner must be instance of yii\db\ActiveRecord');
+            throw new RuntimeException('Owner must be instance of yii\db\ActiveRecord');
         }
         if (count($owner->getTableSchema()->primaryKey) > 1) {
-            throw new ErrorException('RelationalBehavior doesn\'t support composite primary keys');
+            throw new RuntimeException('RelationalBehavior doesn\'t support composite primary keys');
         }
 
         parent::attach($owner);
