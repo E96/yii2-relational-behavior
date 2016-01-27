@@ -72,7 +72,7 @@ class RelationalBehavior extends Behavior
         } elseif (is_array($activeQuery->via)) {
             $viaQuery = $activeQuery->via[1];
         } else {
-            throw new ErrorException('Unknown via type');
+            throw new RuntimeException('Unknown via type');
         }
 
         $junctionTable = reset($viaQuery->from);
@@ -126,7 +126,7 @@ class RelationalBehavior extends Behavior
                 $relationPks = array_filter($relationPks);
                 $savedRecords = count($relationPks);
                 if ($passedRecords != $savedRecords) {
-                    throw new ErrorException('All relation records must be saved');
+                    throw new RuntimeException('All relation records must be saved');
                 }
                 foreach ($relationPks as $relationPk) {
                     $junctionRows[] = [$model->primaryKey, $relationPk];
