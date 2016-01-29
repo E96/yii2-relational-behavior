@@ -34,7 +34,7 @@ class RelationalBehavior extends Behavior
         if (!($owner instanceof ActiveRecord)) {
             throw new RuntimeException('Owner must be instance of yii\db\ActiveRecord');
         }
-        if (count($owner->getTableSchema()->primaryKey) > 1) {
+        if (count($owner->primaryKey()) > 1) {
             throw new RuntimeException('RelationalBehavior doesn\'t support composite primary keys');
         }
 
@@ -93,7 +93,7 @@ class RelationalBehavior extends Behavior
 
             /* @var $modelClass ActiveRecord */
             $modelClass = $activeQuery->modelClass;
-            $value = $modelClass::findAll($value);
+            $value = $modelClass::find()->where([$this->owner->primaryKey()[0] => $value])->all();
 
             if (!empty($activeQuery->via)) {
                 list($junctionTable, $primaryModelColumn, $relatedModelColumn) = $this->parseQuery($activeQuery); 
