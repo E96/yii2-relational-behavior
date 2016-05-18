@@ -140,7 +140,7 @@ class RelationalBehavior extends Behavior
 
                 $savedRecords = count($relationPks);
                 if ($passedRecords != $savedRecords) {
-                    throw new RuntimeException('All relation records must be saved. ');
+                    throw new RuntimeException('All relation records must be saved. There are incorrect PKs.');
                 }
                 foreach ($relationPks as $relationPk) {
 
