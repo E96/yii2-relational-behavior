@@ -48,8 +48,8 @@ class User extends ActiveRecord
             'relationalBehavior' => [
                 'class' => \petrixs\behavior\RelationalBehavior::class,
                 'sortSettings' => [
-                    'relation' => [
-                       'sortColumn' => 'Sort column name in linking table'
+                    'permissions' => [
+                       'sortColumn' => 'Sort column name at linking table'
                     ]
                 ]
             ]
