@@ -34,6 +34,11 @@ class RelationalBehavior extends Behavior
      */
     public $sortSettings = null;
 
+    /**
+     * @var array
+     */
+    protected $relationalRawData = null;
+
     public function attach($owner)
     {
         if (!($owner instanceof ActiveRecord)) {
@@ -89,6 +94,9 @@ class RelationalBehavior extends Behavior
 
     public function __set($name, $value)
     {
+
+        $this->relationalRawData[$name] = $value;
+
         if (is_array($value) && count($value) > 0 && !($value[0] instanceof Object) ||
             !is_array($value) && !($value instanceof Object)
         ) {
@@ -131,9 +139,9 @@ class RelationalBehavior extends Behavior
 
                 if ($this->sortSettings[$relationName] &&
                     isset($this->sortSettings[$relationName]['sortColumn']) &&
-                    isset(\Yii::$app->request->getBodyParams()[$relationName])
+                    isset($this->relationalRawData[$relationName])
                 ) {
-                    $relationPks = \Yii::$app->request->getBodyParams()[$relationName];
+                    $relationPks = $this->relationalRawData[$relationName];
                 } else {
                     $relationPks = array_filter($relationPks);
                 }
