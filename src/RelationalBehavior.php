@@ -18,7 +18,7 @@ use yii\helpers\ArrayHelper;
 class RelationalBehavior extends Behavior
 {
     const EVENT_AFTER_RELATION_UPDATE = 'manyToManyRelationUpdate';
-    
+
     /**
      * @var ActiveRecord
      */
@@ -28,6 +28,16 @@ class RelationalBehavior extends Behavior
      * @var array
      */
     protected $oldRelations = [];
+
+    /**
+     * @var string
+     */
+    public $sortSettings = null;
+
+    /**
+     * @var array
+     */
+    protected $relationalRawData = null;
 
     public function attach($owner)
     {
@@ -78,12 +88,15 @@ class RelationalBehavior extends Behavior
         $junctionTable = reset($viaQuery->from);
         $primaryModelColumn = array_keys($viaQuery->link)[0];
         $relatedModelColumn = reset($activeQuery->link);
-        
+
         return [$junctionTable, $primaryModelColumn, $relatedModelColumn];
     }
 
     public function __set($name, $value)
     {
+
+        $this->relationalRawData[$name] = $value;
+
         if (is_array($value) && count($value) > 0 && !($value[0] instanceof Object) ||
             !is_array($value) && !($value instanceof Object)
         ) {
@@ -96,7 +109,7 @@ class RelationalBehavior extends Behavior
             $value = $modelClass::findAll($value);
 
             if (!empty($activeQuery->via)) {
-                list($junctionTable, $primaryModelColumn, $relatedModelColumn) = $this->parseQuery($activeQuery); 
+                list($junctionTable, $primaryModelColumn, $relatedModelColumn) = $this->parseQuery($activeQuery);
                 $query = new Query([
                     'select' => [$relatedModelColumn],
                     'from' => [$junctionTable],
@@ -113,40 +126,71 @@ class RelationalBehavior extends Behavior
     {
         /** @var ActiveRecord $model */
         $model = $event->sender;
+        $position = 0;
 
         $relatedRecords = $model->getRelatedRecords();
         foreach ($relatedRecords as $relationName => $relationRecords) {
             $activeQuery = $model->getRelation($relationName);
             if (!empty($activeQuery->via)) { // works only for many-to-many relation
                 list($junctionTable, $primaryModelColumn, $relatedModelColumn) = $this->parseQuery($activeQuery);
-
                 $junctionRows = [];
                 $relationPks = ArrayHelper::getColumn($relationRecords, array_keys($activeQuery->link)[0], false);
                 $passedRecords = count($relationPks);
-                $relationPks = array_filter($relationPks);
-                $savedRecords = count($relationPks);
-                if ($passedRecords != $savedRecords) {
-                    throw new RuntimeException('All relation records must be saved');
-                }
-                foreach ($relationPks as $relationPk) {
-                    $junctionRows[] = [$model->primaryKey, $relationPk];
+
+                if ($this->sortSettings[$relationName] &&
+                    isset($this->sortSettings[$relationName]['sortColumn']) &&
+                    isset($this->relationalRawData[$relationName])
+                ) {
+                    $relationPks = $this->relationalRawData[$relationName];
+                } else {
+                    $relationPks = array_filter($relationPks);
                 }
 
-                $model->getDb()->transaction(function() use ($junctionTable, $primaryModelColumn, $relatedModelColumn,
-                    $junctionRows, $model
+                $savedRecords = count($relationPks);
+                if ($passedRecords != $savedRecords) {
+                    throw new RuntimeException('All relation records must be saved. There are incorrect PKs.');
+                }
+                foreach ($relationPks as $relationPk) {
+
+                    $position++;
+
+                    if (isset($this->sortSettings[$relationName]['sortColumn'])) {
+                        $junctionRows[] = [$model->primaryKey, $relationPk, $position];
+                    } else {
+                        $junctionRows[] = [$model->primaryKey, $relationPk];
+                    }
+                }
+
+                $model->getDb()->transaction(function () use (
+                    $junctionTable,
+                    $primaryModelColumn,
+                    $relatedModelColumn,
+                    $junctionRows,
+                    $model,
+                    $relationName
                 ) {
                     $db = $model->getDb();
-                    $db->createCommand()->delete($junctionTable, [$primaryModelColumn => $model->primaryKey])->execute();
+                    $db->createCommand()->delete($junctionTable,
+                        [$primaryModelColumn => $model->primaryKey])->execute();
                     if (!empty($junctionRows)) {
-                        $db->createCommand()->batchInsert($junctionTable, [$primaryModelColumn, $relatedModelColumn],
-                            $junctionRows)->execute();
+
+                        if (isset($this->sortSettings[$relationName]['sortColumn'])) {
+                            $db->createCommand()->batchInsert($junctionTable,
+                                [$primaryModelColumn, $relatedModelColumn, $this->sortSettings[$relationName]['sortColumn']],
+                                $junctionRows)->execute();
+                        } else {
+                            $db->createCommand()->batchInsert($junctionTable,
+                                [$primaryModelColumn, $relatedModelColumn],
+                                $junctionRows)->execute();
+                        }
+
                     }
                 });
             }
         }
-        
+
         $model->trigger(self::EVENT_AFTER_RELATION_UPDATE, new AfterRelationUpdateEvent([
-            'oldRelations' => $this->oldRelations 
+            'oldRelations' => $this->oldRelations
         ]));
     }
 }

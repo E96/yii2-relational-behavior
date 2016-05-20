@@ -38,6 +38,41 @@ class User extends ActiveRecord
 }
 ```
 
+In model with sorting support:
+```php
+class User extends ActiveRecord
+{
+    public function behaviors()
+    {
+        return [
+            'relationalBehavior' => [
+                'class' => \petrixs\behavior\RelationalBehavior::class,
+                'sortSettings' => [
+                    'permissions' => [
+                       'sortColumn' => 'Sort column name at linking table'
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    public function rules()
+    {
+        return [
+            ['permissions', 'safe'], // allow set permissions with setAttributes()
+        ];
+    }
+
+    // define many-to-many relation
+    public function getPermissions()
+    {
+        return $this->hasMany(Permission::className(), ['id' => 'permissionId'])
+            ->viaTable('user-map-permission', ['userId' => 'id']);
+    }
+}
+
+```
+
 In view:
 ```php
 $form->field($model, 'permissions')->dropDownList($permissions, ['multiple' => true])
