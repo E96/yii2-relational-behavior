@@ -102,7 +102,7 @@ class RelationalBehavior extends Behavior
                     'from' => [$junctionTable],
                     'where' => [$primaryModelColumn => $this->owner->primaryKey]
                 ]);
-                $this->oldRelations[$name] = $query->createCommand()->queryColumn();
+                $this->oldRelations[$name] = $query->createCommand($modelClass::getDb())->queryColumn();
             }
         }
 
