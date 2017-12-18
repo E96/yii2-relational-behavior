@@ -6,7 +6,7 @@ namespace e96\behavior;
 use RuntimeException;
 use yii\base\Behavior;
 use yii\base\ErrorException;
-use yii\base\Object;
+use yii\base\BaseObject;
 use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
 use yii\db\Query;
@@ -18,7 +18,7 @@ use yii\helpers\ArrayHelper;
 class RelationalBehavior extends Behavior
 {
     const EVENT_AFTER_RELATION_UPDATE = 'manyToManyRelationUpdate';
-    
+
     /**
      * @var ActiveRecord
      */
@@ -78,7 +78,7 @@ class RelationalBehavior extends Behavior
         $junctionTable = reset($viaQuery->from);
         $primaryModelColumn = array_keys($viaQuery->link)[0];
         $relatedModelColumn = reset($activeQuery->link);
-        
+
         return [$junctionTable, $primaryModelColumn, $relatedModelColumn];
     }
 
@@ -96,7 +96,7 @@ class RelationalBehavior extends Behavior
             $value = $modelClass::findAll($value);
 
             if (!empty($activeQuery->via)) {
-                list($junctionTable, $primaryModelColumn, $relatedModelColumn) = $this->parseQuery($activeQuery); 
+                list($junctionTable, $primaryModelColumn, $relatedModelColumn) = $this->parseQuery($activeQuery);
                 $query = new Query([
                     'select' => [$relatedModelColumn],
                     'from' => [$junctionTable],
@@ -144,9 +144,9 @@ class RelationalBehavior extends Behavior
                 });
             }
         }
-        
+
         $model->trigger(self::EVENT_AFTER_RELATION_UPDATE, new AfterRelationUpdateEvent([
-            'oldRelations' => $this->oldRelations 
+            'oldRelations' => $this->oldRelations
         ]));
     }
 }
